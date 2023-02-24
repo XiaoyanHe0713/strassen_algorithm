@@ -1,0 +1,86 @@
+\documentclass{article}
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{Note for Strassen Algorithm}
+\author{Xiaoyan He}
+\date{2023-02-22}
+
+\begin{document}
+
+\maketitle
+
+\section{Ideas of Basic Matrix Multiplication}
+The idea behind Strassen algorithm is in the formulation
+of matrix multiplication as a recursive problem.
+Assume that we have two matrices in $\mathbb{R}^{n \times n}$  $A$ and $B$. We can write $A$ and $B$ as follows:
+\begin{equation}
+A = \begin{bmatrix}
+A_{11} & A_{12} \\
+A_{21} & A_{22}
+\end{bmatrix}
+\end{equation}
+\begin{equation}
+B = \begin{bmatrix}
+B_{11} & B_{12} \\
+B_{21} & B_{22}
+\end{bmatrix}
+\end{equation}\\
+Then we can write the matrix multiplication as follows:
+\begin{equation}
+AB = \begin{bmatrix}
+A_{11}B_{11} + A_{12}B_{21} & A_{11}B_{12} + A_{12}B_{22} \\
+A_{21}B_{11} + A_{22}B_{21} & A_{21}B_{12} + A_{22}B_{22}
+\end{bmatrix}
+\end{equation}\\
+However, we still need to do $8$ matrix multiplications to get the result. The time complexity is $O(n^3)$.
+
+\section{Strassen Algorithm}
+The idea of Strassen algorithm is to reduce the number of matrix multiplications.
+We can write the matrix multiplication as follows:
+\begin{equation}
+    M_1 = (A_{11} + A_{22})(B_{11} + B_{22})
+\end{equation}
+\begin{equation}
+    M_2 = (A_{21} + A_{22})B_{11}
+\end{equation}
+\begin{equation}
+    M_3 = A_{11}(B_{12} - B_{22})
+\end{equation}
+\begin{equation}
+    M_4 = A_{22}(B_{21} - B_{11})
+\end{equation}
+\begin{equation}
+    M_5 = (A_{11} + A_{12})B_{22}
+\end{equation}
+\begin{equation}
+    M_6 = (A_{21} - A_{11})(B_{11} + B_{12})
+\end{equation}
+\begin{equation}
+    M_7 = (A_{12} - A_{22})(B_{21} + B_{22})
+\end{equation}\\
+Then we can write the matrix multiplication $AB = C$ as follows:
+\begin{equation}
+    AB = C = \begin{bmatrix}
+        C_{11} & C_{12} \\
+        C_{21} & C_{22}
+    \end{bmatrix}
+\end{equation}
+\begin{equation}
+    C_{11} = M_1 + M_4 - M_5 + M_7
+\end{equation}
+\begin{equation}
+    C_{12} = M_3 + M_5
+\end{equation}
+\begin{equation}
+    C_{21} = M_2 + M_4
+\end{equation}
+\begin{equation}
+    C_{22} = M_1 - M_2 + M_3 + M_6
+\end{equation}\\
+We can see that we only need to do $7$ matrix multiplications to get the result. The time complexity is $O(n^{\log_2 7})$.
+In general, we will recursively do the matrix multiplication until the size of the matrix is $1 \times 1$.
+Then we can use the basic matrix multiplication to get the result.
+
+\end{document}
