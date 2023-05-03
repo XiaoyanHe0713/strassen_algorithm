@@ -1,6 +1,7 @@
 import random
 from math import log, ceil
 import numpy as np
+from tqdm import tqdm
 class strassen:
 
     # initialize the class
@@ -148,19 +149,58 @@ class strassen:
         C = self.strassen(self.A, self.B)
         self.printMatrix(C)
 
+    def testError(self, size, m):
+        D = np.eye(size) * m
+        D[0][0] = 1
+        A = D @ self.A
+        B = self.B @ D
+        C = A @ B
+        C_strassen = self.strassen(A, B)
+        error = abs((C[0][0]-C_strassen[0][0])/C[0][0])
+
+        # import machine epsilon
+        from numpy import finfo
+        eps = finfo(float).eps
+        threshold = eps * (m**2)
+
+        if (error < threshold):
+            raise Exception("Error is too small to be detected")
+        
+
+        else:
+            D = np.zeros((size, size))
+            for i in range(size):
+                for j in range(size):
+                    error = abs((C[i][j] - C_strassen[i][j])/C[i][j])
+                    if (error > threshold):
+                        D[i][j] = 10
+            
+            # visualize the matrix where x-axis is the row and y-axis is the column and z-axis is the value of the matrix
+            import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            x = np.arange(0, size, 1)
+            y = np.arange(0, size, 1)
+            X, Y = np.meshgrid(x, y)
+            Z = D[X,Y]
+            ax.plot_surface(X, Y, Z)
+            ax.set_xlabel('Row')
+            ax.set_ylabel('Column')
+            ax.set_zlabel('Value')
+
+            # save the figure in the folder
+            fig.savefig("tests/strassen_" + str(size) + "_" + str(m) + ".png")
+
 if __name__ == "__main__":
-    # test the algorithm
+    # pipeline for testing
+    sizes = [16, 32, 64, 128, 256]
+    values = [100, 1000, 10000]
     
-    # random matrices
-    A = [[random.randint(0, 9) for i in range(5)] for j in range(5)]
-    B = [[random.randint(0, 9) for i in range(5)] for j in range(5)]
-
-    s = strassen(A, B)
-    s.run()
-
-    correct_result = np.dot(np.array(A), np.array(B)).tolist()
-    print ("Correct result = ")
-    s.printMatrix(correct_result)
-
-
-    
+    for size in tqdm(sizes):
+        for value in tqdm(values):
+            # generate random matrices whose elements are between -1 and 1
+            A = np.random.rand(size, size) * 2 - 1
+            B = np.random.rand(size, size) * 2 - 1
+            s = strassen(A, B)
+            s.testError(size, value)
