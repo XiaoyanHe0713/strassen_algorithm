@@ -150,8 +150,18 @@ class strassen:
         self.printMatrix(C)
 
     def testError(self, size, m):
-        D = np.eye(size) * m
-        D[0][0] = 1
+        D = np.eye(size)
+        # The first third of the matrix is multiplied by 1
+        # The second third of the matrix is multiplied by m
+        # The last third of the matrix is multiplied by m^2
+        for i in range(size):
+            if (i < size/3):
+                D[i][i] = 1
+            elif (i < size*2/3):
+                D[i][i] = m
+            else:
+                D[i][i] = m**2
+        
         A = D @ self.A
         B = self.B @ D
         C = A @ B
@@ -161,19 +171,21 @@ class strassen:
         # import machine epsilon
         from numpy import finfo
         eps = finfo(float).eps
-        threshold = eps * (m**2)
+        threshold = eps * m**4
+    
+        D = np.zeros((size, size))
+        for i in range(size):
+            for j in range(size):
+                error = abs((C[i][j] - C_strassen[i][j])/C[i][j])
+                
+                if (error > threshold):
+                    D[i][j] = 20
 
-        if (error < threshold):
-            raise Exception("Error is too small to be detected")
-        
+                elif (error > threshold/(m**2)):
+                    D[i][j] = 10
 
-        else:
-            D = np.zeros((size, size))
-            for i in range(size):
-                for j in range(size):
-                    error = abs((C[i][j] - C_strassen[i][j])/C[i][j])
-                    if (error > threshold):
-                        D[i][j] = 10
+                elif (error > threshold/(m**3)):
+                    D[i][j] = 5
             
             # visualize the matrix where x-axis is the row and y-axis is the column and z-axis is the value of the matrix
             import matplotlib.pyplot as plt
@@ -194,8 +206,8 @@ class strassen:
 
 if __name__ == "__main__":
     # pipeline for testing
-    sizes = [16, 32, 64, 128, 256]
-    values = [100, 1000, 10000]
+    sizes = [16, 32, 64, 128]
+    values = [10, 100, 1000]
     
     for size in tqdm(sizes):
         for value in tqdm(values):
