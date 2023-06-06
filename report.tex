@@ -2,6 +2,7 @@
 \usepackage{fullpage}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{graphicx}
 \newtheorem{theorem}{Theorem}
 
 \title{Efficiency and Stability of Strassen Algorithm}
@@ -14,8 +15,8 @@ Author: Xiaoyan He}
 \maketitle
 
 \begin{abstract}
-    This paper is a study of efficiency and stability of Strassen Algorithm. We will first introduce the naive matrix multiplication
-    and the ideas behind Strassen Algorithm. Then we will discuss the performance of naive matrix multiplication and Strassen Algorithm
+    This paper is a study of efficiency and stability of Strassen Algorithm. We will first introduce the classical matrix multiplication
+    and the ideas behind Strassen Algorithm. Then we will discuss the performance of classical matrix multiplication and Strassen Algorithm
     under different matrix sizes. Finally we will discuss the limitation of stability of Strassen Algorithm and the possible reasons that 
     cause such instability. The experiments in this study use both Python and Matlab to test and visualize the result. The goal of this 
     paper is to provide a comprehensive analysis of the efficiency and stability of Strassen Algorithm.
@@ -86,7 +87,7 @@ hardware level.
 
 
 \section{Ideas of Block Matrix Multiplication}
-\hspace{5.5mm}For the naive matrix multiplication, we can represent the calculation as following psuedo code:
+\hspace{5.5mm}For the classical matrix multiplication, we can represent the calculation as following psuedo code:
 \begin{verbatim}
     for i = 1 to n
         for j = 1 to n
@@ -94,7 +95,7 @@ hardware level.
                 C[i][j] += A[i][k] * B[k][j]
 \end{verbatim}
 
-We can observe that the time complexity of naive matrix multiplication is $O(n^3)$. Such time complexity is not good enough for
+We can observe that the time complexity of classical matrix multiplication is $O(n^3)$. Such time complexity is not good enough for
 large matrices. Therefore, we need to find a better way to do matrix multiplication. That is Strassen's Algorithm.\\
 
 Before we introduce the ideas behind the Strassen's Algorithm, we should first familiar with the block matrix multiplication. 
@@ -204,7 +205,7 @@ divide the matrix into $4$ submatrices with same size.\\
 
 Here is the basic idea of the implementation of Strassen Algorithm:
 \begin{enumerate}
-    \item Check if the size of the matrix is below a specific size. If so, return the multiplication of two matrices by naive method.
+    \item Check if the size of the matrix is below a specific size. If so, return the multiplication of two matrices by classical method.
     \item Pad the matrix to make sure the size of the matrix is $2^k \times 2^k$.
     \item Divide the matrix into $4$ submatrices with same size.
     \item Calculate the $7$ equations above.
@@ -213,10 +214,74 @@ Here is the basic idea of the implementation of Strassen Algorithm:
     \item If the size of the matrix is not the power of $2$, then we need to remove the padding.
 \end{enumerate}
 
-\section{Comparison of Strassen Algorithm and Naive Method}
+\section{Comparison of Strassen Algorithm and Classical Method}
+\hspace{5.5mm}Although ideally Strassen's algorithm should be faster than the classical method, the constant factors involved in Strassen's algorithm are larger than those in the classical method since in Strassen's algorithm,
+we have to involve more operations when we do the adding and subtracting operations for the $7$ equations. Intuitively, we can try to understand the concept in this way. Therefore, in practice, the classical method is faster than Strassen's algorithm for small matrices.\\
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth, height=7.8cm]{figs/time_2.png}
+    \caption{Time Complexity of Strassen's Algorithm and Classical Method}
+\end{figure}
 
-\section{Limitation of Strassen Algorithm}
-Strassen's algo is not quite as numerically stable as the naive method. Strassen's algorithm only concerns dense matrices and that the matrices need to be fairly large for it to be worthwhile.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth, height=7.8cm]{figs/log_time_2.png}
+    \caption{Time Complexity of Strassen's Algorithm and Classical Method(log scale)}
+\end{figure}
+In order to compare the performance of Strassen's algorithm and the classical method, we implement both of them in Python and compare the time they cost to do the matrix multiplication.
+We test the running time of both Strassen's algorithm and the classical method for matrix with size of exponetial of $2$ from $2^1$ to $2^{5}$. From the figures shown above, we can see that the classical method
+has a generally good performance than Strassen's algorithm when the size of the matrix is relative small. However, when the size of the matrix is large enough, Strassen's algorithm has a better performance than the classical method.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth, height=7.8cm]{figs/time.png}
+    \caption{Time Complexity of Strassen's Algorithm and Classical Method with Larger Size of Matrix}
+\end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth, height=7.8cm]{figs/log_time.png}
+    \caption{Time Complexity of Strassen's Algorithm and Classical Method with Larger Size of Matrix(log scale)}
+\end{figure}
+
+Then we do the experiment for the size of the matrix from $2^1$ to $2^{10}$. From the figures 3 and 4, we can see the time used by Strassen's algorithm becomes closer to the time used by the classical method. 
+And when the size of the matrix is large enough, Strassen's algorithm has a better performance than the classical method. From figure 5, we can observe that as the matrix's size n become over 2000, the time used
+by classical method become much more than the time used by Strassen's algorithm.\\
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth, height=7.8cm]{figs/time_3.png}
+    \caption{Time Complexity of Strassen's Algorithm and Classical Method}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth, height=7.8cm]{figs/time_4.png}
+    \caption{Time Complexity of Strassen's Algorithm with Threshold and Classical Method}
+\end{figure}
+
+Thus the choice becomes very important. Intuitively, we can try to understand the concept in this way. If we have a matrix with size 10000 by 10000, then it's 
+useful to divide it into small matrices and do few additions and subtractions. However, if we have a matrix with size 10 by 10, it's not necessary to divide it into small matrices.\\
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth, height=7.8cm]{figs/log_time_4.png}
+    \caption{Time Complexity of Strassen's Algorithm with Threshold and Classical Method(log scale)}
+\end{figure}
+
+The basic takeaway from this experiment
+is that we can add a threshold to decide whether we should use Strassen's algorithm or the classical method which means when we do Strassen's algorithm recursively as the matrices are split into a sufficiently small size we 
+should directly use classical methed to calculate instead of waiting it split the matrix into size of 1.\\
+
+In figure 6 and 7, they plot the comparison of the time used by Strassen's algorithm with threshold and the classical method. The threshold used is 32 which means for the matrix with size less than 32 by 32, we will use 
+classical method instead of Strassen's algorithm. Still for the matrices with size from $2^1$ to $2^{10}$, now the time used by Strassen's algorithm with threshold is much less than the time used by the classical method.\\
+
+In conclusion, although asymptotically Strassen's algorithm is faster than the classical method, it doesn't mean Strassen's algorithm is faster, the constant factors involved in Strassen's algorithm are larger than those 
+in the classical method. So in practice, when implementing Strassen's algorithm, we should be careful about the size of the matrix we are dealing with, and it's always a good idea to add a threshold to decide whether we 
+should use Strassen's algorithm or the classical method which can save a lot of time when dealing with small matrices.
+
+\section{Limitation of Strassen Algorithm in Stability}
+\hspace{5.5mm}Strassen's algorithm is not quite as numerically stable as the classical method. Strassen's algorithm only concerns dense matrices and that the matrices need to be fairly large for it to be worthwhile. As what introduced in the
+previous section, the computers use floating point arithmetic to do the calculation which means the result of the calculation is not as accurate as what we compute by hand. And the error will be accumulated as the calculation 
+goes on, especially for the Strassen's algorithm we recursively do the calculation. So the result of the Strassen's algorithm is not as accurate as we expect it to be.\\
 
 \section{Conclusion and Discussion}
 \end{document}
