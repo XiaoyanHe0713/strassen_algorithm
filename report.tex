@@ -279,9 +279,159 @@ in the classical method. So in practice, when implementing Strassen's algorithm,
 should use Strassen's algorithm or the classical method which can save a lot of time when dealing with small matrices.
 
 \section{Limitation of Strassen Algorithm in Stability}
-\hspace{5.5mm}Strassen's algorithm is not quite as numerically stable as the classical method. Strassen's algorithm only concerns dense matrices and that the matrices need to be fairly large for it to be worthwhile. As what introduced in the
-previous section, the computers use floating point arithmetic to do the calculation which means the result of the calculation is not as accurate as what we compute by hand. And the error will be accumulated as the calculation 
+\hspace{5.5mm}Strassen's algorithm is not quite as numerically stable as the classical method. Strassen's algorithm only concerns dense matrices and that the matrices need to be fairly large for it to be worthwhile. As what introduced 
+in the previous section, the computers use floating point arithmetic to do the calculation which means the result of the calculation is not as accurate as what we compute by hand. And the error will be accumulated as the calculation 
 goes on, especially for the Strassen's algorithm we recursively do the calculation. So the result of the Strassen's algorithm is not as accurate as we expect it to be.\\
 
+In this section we will do the experiment to show the limitation of Strassen's algorithm in stability and show how the error is accumulated as the calculation goes on. First consider two random square matrices $A$ and $B$ with same size, and 
+a diagonal matrix $D$ with first half diagonal elements equal to $1$ and the second half diagonal elements equal to $100$. Then we construct $A^{*}$ and $B^{*}$ as $A^{*} = DA$ and $B^{*} = BD$, then we calculate the product of $A^{*}$ and $B^{*}$ 
+by Strassen's algorithm and classical method. Let's call them $C^{*}$ and $C$ respectively. Then we calculate the relative error matrix $|\frac{C^{*} - C}{C}|$. This is because the classical matrix multiplication
+calculate the result element wise, rather the Strassen's algorithm recursively calculate the result. So compare the relative error can show the difference between the two methods and minimize the influence of the limitation of floating point 
+arithmetic itself namely machine epsilon.\\
+
+We have 
+\begin{equation}
+    A^{*} = DA = \begin{bmatrix}
+        \mathbf{1} & 0\\
+        0 & \mathbf{100}
+    \end{bmatrix} \begin{bmatrix}
+        A_{11} & A_{12}\\
+        A_{21} & A_{22}
+    \end{bmatrix} = \begin{bmatrix}
+        A_{11} & A_{12}\\
+        100A_{21} & 100A_{22}
+    \end{bmatrix}
+\end{equation}
+\begin{equation}
+    B^{*} = BD = \begin{bmatrix}
+        B_{11} & B_{12}\\
+        B_{21} & B_{22}
+    \end{bmatrix} \begin{bmatrix}
+        \mathbf{1} & 0\\
+        0 & \mathbf{100}
+    \end{bmatrix} = \begin{bmatrix}
+        B_{11} & 100B_{12}\\
+        B_{21} & 100B_{22}
+    \end{bmatrix}
+\end{equation}
+Then by classical method we have
+\begin{equation}
+    C = A^{*}B^{*} = \begin{bmatrix}
+        A_{11}B_{11} + A_{12}B_{21} & 100A_{11}B_{12} + 100A_{12}B_{22}\\
+        100A_{21}B_{11} + 100A_{22}B_{21} & 10000A_{21}B_{12} + 10000A_{22}B_{22}
+    \end{bmatrix}
+    = \begin{bmatrix}
+        C_{11} & C_{12}\\
+        C_{21} & C_{22}
+    \end{bmatrix}
+\end{equation}
+And by Strassen's algorithm we have
+\begin{equation}
+    M_1 = (A^{*}_{11} + A^{*}_{22})(B^{*}_{11} + B^{*}_{22}) = 
+    (A_{11} + 100A_{22})(B_{11} + 100B_{22})
+\end{equation}
+\begin{equation}
+    M_2 = (A^{*}_{21} + A^{*}_{22})B^{*}_{11} = 
+    (100A_{21} + 100A_{22})B_{11}
+\end{equation}
+\begin{equation}
+    M_3 = A^{*}_{11}(B^{*}_{12} - B^{*}_{22}) = 
+    A_{11}(100B_{12} - 100B_{22})
+\end{equation}
+\begin{equation}
+    M_4 = A^{*}_{22}(B^{*}_{21} - B^{*}_{11}) = 
+    100A_{22}(B_{21} - B_{11})
+\end{equation}
+\begin{equation}
+    M_5 = (A^{*}_{11} + A^{*}_{12})B^{*}_{22} = 
+    (A_{11} + A_{12})100B_{22}
+\end{equation}
+\begin{equation}
+    M_6 = (A^{*}_{21} - A^{*}_{11})(B^{*}_{11} + B^{*}_{12}) = 
+    (100A_{21} - A_{11})(B_{11} + 100B_{12})
+\end{equation}
+\begin{equation}
+    M_7 = (A^{*}_{12} - A^{*}_{22})(B^{*}_{21} + B^{*}_{22}) = 
+    (A_{12} - 100A_{22})(B_{21} + 100B_{22})
+\end{equation}
+\begin{equation}
+    C^{*} = \begin{bmatrix}
+        M_1 + M_4 - M_5 + M_7 & M_3 + M_5\\
+        M_2 + M_4 & M_1 - M_2 + M_3 + M_6
+    \end{bmatrix}
+    = \begin{bmatrix}
+        C^{*}_{11} & C^{*}_{12}\\
+        C^{*}_{21} & C^{*}_{22}
+    \end{bmatrix}
+\end{equation}
+
+Here we can see that the classical methed calculate $C_{11}$ directly and element-wise that
+doesn't involve any part of the emplified part of the matrix $A$ and $B$. But the Strassen's algorithm
+calculate $C^{*}_{11}$ by $M_1 + M_4 - M_5 + M_7$ which involves the emplified part of the matrix $A$ and $B$.
+We can see both $M_1$ and $M_7$ involve the product of the emplified part of the matrix $A$ and $B$. Thus, we 
+expect the top left part of the relative error matrix will be greater than or equal to $100^2 \times \epsilon_{machine}$.\\
+
+We write the script of the experiment in MATLAB and use mesh function to visualize the error matrix, for the entry that relative error
+is greater than $m^2 \times \epsilon_{machine}$ where $m$ is the emplify value, we set the value of correspond entry of the visualized matrix 
+as $100$, and for the entry that relative error s greater than $m \times \epsilon_{machine}$, we set the correspond entry of the visualized 
+matrix as $50$ and rest left as $0$. The result is shown as follows.\\
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.67\textwidth, height = 7cm]{128_100_2.png}
+    \caption{The relative error with $128$ by $128$ matrix and $100$ times emplification}
+\end{figure}
+
+The result verifies our expectation of the relative error about the top left part of the relative error matrix. But we are also surprised that
+distribution of the relative error is almost symmetric about the diagonal of the matrix and the relative errors are below $m \times \epsilon_{machine}$
+for the upper triangular part of the bottom left part and the lower triangular part of the top right part.\\
+
+And we also try to just use $D$ to emplify the matrix $A$ and just use $D$ to emplify the matrix $B$ and the result is shown as figure 9 and 10.\\
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.67\textwidth, height = 7cm]{128_100_2_A.png}
+    \caption{The relative error with $128$ by $128$ matrix and only $A$ got $100$ times emplification}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.67\textwidth, height = 7cm]{128_100_2_B.png}
+    \caption{The relative error with $128$ by $128$ matrix and only $B$ got $100$ times emplification}
+\end{figure}
+
+As these two figures shown, errors in the upper triangular of the bottom left part is caused by the emplification of $B$ and errors in the lower triangular
+of the top right part is caused by the emplification of $A$.\\
+
+To have a better understanding of the distribution of the relative error, instead of setting the
+diagonal entries of $D$ as $1$ and $m$, we set the diagonal entries of $D$ as $1$, $m$, and $m^2$ for the first third, second third, and the last 
+third part respectively. The result is shown as figure 11.\\
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.67\textwidth, height = 7cm]{128_100_3.png}
+    \caption{The relative error with $128$ by $128$ matrix and $100$ times emplification with New $D$}
+\end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.67\textwidth, height = 7cm]{128_100_3_A.png}
+    \caption{The relative error with $128$ by $128$ matrix and only $A$ got $100$ times emplification with New $D$}
+\end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.67\textwidth, height = 7cm]{128_100_3_B.png}
+    \caption{The relative error with $128$ by $128$ matrix and only $B$ got $100$ times emplification with New $D$}
+\end{figure}
+
+As these three figures shown, the relative error is still symmetric about the diagonal of the matrix. And through these figures we can see that if we 
+want to use strassen algorithm to calculate the product of two matrices that have extremely different scale in values, the algorithm will be very unstable
+compared to the classical algorithm.\\
+
 \section{Conclusion and Discussion}
+\hspace{5.5mm}In this report, we have discussed the Strassen's algorithm and its stability. We firstly introduced the ideas behind the Strassen's algorithm
+and its time complexity. Then we discussed the efficiency stability of the Strassen's algorithm. As our experiments shown, the Strassen's algorithm performs
+better as the size of the matrix increases. But we should notice that the constant in the time complexity of the Strassen's algorithm is much larger than the
+constant in the time complexity of the classical algorithm. Thus, the Strassen's algorithm is not always better than the classical algorithm. To general improve 
+the time complexity of matrix multiplication algorithm, it's worth to try that adding a threshold to decide when to use the Strassen's algorithm and when to use
+the classical algorithm. Then we discussed the stability of the Strassen's algorithm. We have shown that the Strassen's algorithm is not stable in the sense of 
+the relative error compare to classical algorithm as the error will accumulate recursively in the Strassen's algorithm. Therefore, if we want to evaluate the accuracy
+of the result over the efficiency of calculation, we should use the classical algorithm instead of the Strassen's algorithm.\\
 \end{document}
